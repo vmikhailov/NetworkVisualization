@@ -1,0 +1,87 @@
+﻿<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+.link {
+  stroke: #ccc;
+}
+
+.node text {
+  pointer-events: none;
+  font: 10px sans-serif;
+}
+
+</style>
+<body>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script>
+
+    var width = 1800, height = 900;
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width)
+    .attr("height", height);
+
+var force = d3.layout.force()
+    .gravity(0.1)
+    .distance(100)
+    .charge(-200)
+    //.linkDistance(490)
+    //.linkStrength(1)
+    //.friction(0.1)
+    .size([width, height]);
+
+d3.json("data/gsmall.json", function(error, json) {
+  force
+      .nodes(json.nodes)
+      .links(json.links)
+      .start();
+
+  var drag = force.drag()
+        .on("dragstart", dragstart);
+
+    var link = svg.selectAll(".link")
+        .data(json.links)
+        .enter().append("line")
+        .style("stroke", "#999")
+        .style("stroke-width", function(d) { return d.value; });
+      //.attr("class", "link");
+
+  var node = svg.selectAll(".node")
+      .data(json.nodes)
+      .enter().append("g")
+      .attr("class", "node")
+      .on("dblclick", dblclick)
+      .call(force.drag);
+
+  node.append("image")
+      .attr("xlink:href", function(d) { return d.icon == null ? "images/pc.png" : "images/"+d.icon; })
+      .attr("x", function (d) { return d.size == null ? -8 : -d.size/2; })
+      .attr("y", function (d) { return d.size == null ? -8 : -d.size/2; })
+      .attr("width", function (d) { return d.size == null ? 16 : d.size; })
+      .attr("height", function (d) { return d.size == null ? 16 : d.size; });
+
+  node.append("text")
+      .attr("dx", 12)
+      .attr("dy", ".35em")
+      .text(function(d) { return d.name });
+
+  force.on("tick", function() {
+    link.attr("x1", function(d) { return d.source.x; })
+        .attr("y1", function(d) { return d.source.y; })
+        .attr("x2", function(d) { return d.target.x; })
+        .attr("y2", function(d) { return d.target.y; });
+
+    node.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+  });
+});
+
+function dblclick(d) {
+    d3.select(this).classed("fixed", d.fixed = false);
+}
+
+function dragstart(d) {
+    d3.select(this).classed("fixed", d.fixed = true);
+}
+
+</script>
